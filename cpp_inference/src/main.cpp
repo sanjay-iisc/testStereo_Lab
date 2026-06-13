@@ -239,7 +239,6 @@ int main(int argc, char** argv)
         int frameIndex = 0;
         int frameStep = cameraInput ? 1 : 30;
 
-        
 
         while(true)
         {
@@ -332,24 +331,15 @@ int main(int argc, char** argv)
                 }
             }
 
-            const auto loopEnd =
-                std::chrono::high_resolution_clock::now();
+            const auto loopEnd = std::chrono::high_resolution_clock::now();
 
-            previousCaptureMs =
-                std::chrono::duration<double, std::milli>(
-                    captureEnd - captureStart).count();
+            previousCaptureMs = std::chrono::duration<double, std::milli>(captureEnd - captureStart).count();
 
-            previousProcessMs =
-                std::chrono::duration<double, std::milli>(
-                    processEnd - processStart).count();
+            previousProcessMs = std::chrono::duration<double, std::milli>(processEnd - processStart).count();
 
-            previousGuiMs =
-                std::chrono::duration<double, std::milli>(
-                    guiEnd - guiStart).count();
+            previousGuiMs = std::chrono::duration<double, std::milli>(guiEnd - guiStart).count();
 
-            previousLoopMs =
-                std::chrono::duration<double, std::milli>(
-                    loopEnd - loopStart).count();
+            previousLoopMs = std::chrono::duration<double, std::milli>(loopEnd - loopStart).count();
         }
 
         cap.release();
