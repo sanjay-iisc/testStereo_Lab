@@ -152,26 +152,26 @@ int main(int argc, char** argv)
         if(argc < 3)
         {
             std::cerr << "Usage:\n";
-            std::cerr << argv[0]<< " <engine_path> <image_or_video_or_camera_id> [output_video]\n\n";
+            std::cerr << argv[0]<< " <onnx_or_engine_path> <image_or_video_or_camera_id> [output_video]\n\n";
 
             std::cerr << "Examples:\n";
             std::cerr << argv[0]
-                      << " ../models/multitask_fp16.engine ../data/test.jpg\n";
+                      << " ../models/multitask.onnx ../data/test.jpg\n";
             std::cerr << argv[0]
-                      << " ../models/multitask_fp16.engine ../data/test.mp4 result.mp4\n";
+                      << " ../models/multitask.onnx ../data/test.mp4 result.mp4\n";
             std::cerr << argv[0]
                       << " ../models/multitask_fp16.engine 0\n";
 
             return 1;
         }
 
-        const std::string enginePath = argv[1];
+        const std::string modelPath = argv[1];
         const std::string inputPath = argv[2];
 
         const bool saveOutput = argc >= 4;
         const std::string outputPath = saveOutput ? argv[3] : "";
 
-        TensorRTModel model(enginePath);
+        TensorRTModel model(modelPath);
 
         cv::Mat image = cv::imread(inputPath);
 
@@ -291,10 +291,10 @@ int main(int argc, char** argv)
                 writerInitialized = true;
             }
 
-            // if(writerInitialized)
-            // {
-            //     writer.write(display);
-            // }
+            if(writerInitialized)
+            {
+                writer.write(display);
+            }
 
             const auto guiStart = std::chrono::high_resolution_clock::now();
 

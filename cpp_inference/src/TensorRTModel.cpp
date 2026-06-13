@@ -2,9 +2,12 @@
 #include "Preprocessor.hpp"
 
 #include <chrono>
+#include <cctype>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+
+#include <NvOnnxParser.h>
 
 namespace
 {
@@ -28,6 +31,25 @@ size_t volume(const nvinfer1::Dims& dims)
 
     return v;
 }
+
+std::string lowercaseExtension(const std::string& path)
+{
+    const size_t dot = path.find_last_of('.');
+
+    if(dot == std::string::npos)
+    {
+        return "";
+    }
+
+    std::string extension = path.substr(dot);
+
+    for(char& c : extension)
+    {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+
+    return extension;
+}
 }
 
 void TensorRTLogger::log(Severity severity, const char* msg) noexcept
@@ -38,9 +60,9 @@ void TensorRTLogger::log(Severity severity, const char* msg) noexcept
     }
 }
 
-TensorRTModel::TensorRTModel(const std::string& enginePath)
+TensorRTModel::TensorRTModel(const std::string& modelPath)
 {
-    loadEngine(enginePath);
+    loadModel(modelPath);
     readTensorShapes();
     allocateBuffers();
 
@@ -91,6 +113,20 @@ std::vector<char> TensorRTModel::readBinaryFile(
     return buffer;
 }
 
+void TensorRTModel::loadModel(const std::string& modelPath)
+{
+    const std::string extension = lowercaseExtension(modelPath);
+
+    if(extension == ".onnx")
+    {
+        loadOnnx(modelPath);
+    }
+    else
+    {
+        loadEngine(modelPath);
+    }
+}
+
 void TensorRTModel::loadEngine(
     const std::string& enginePath)
 {
@@ -111,6 +147,107 @@ void TensorRTModel::loadEngine(
     if(!engine_)
     {
         throw std::runtime_error("Failed to deserialize TensorRT engine");
+    }
+
+    context_.reset(engine_->createExecutionContext());
+
+    if(!context_)
+    {
+        throw std::runtime_error("Failed to create TensorRT execution context");
+    }
+}
+
+void TensorRTModel::loadOnnx(const std::string& onnxPath)
+{
+    runtime_.reset(nvinfer1::createInferRuntime(logger_));
+
+    if(!runtime_)
+    {
+        throw std::runtime_error("Failed to create TensorRT runtime");
+    }
+
+    std::unique_ptr<nvinfer1::IBuilder> builder(
+        nvinfer1::createInferBuilder(logger_));
+
+    if(!builder)
+    {
+        throw std::runtime_error("Failed to create TensorRT builder");
+    }
+
+    const auto explicitBatch =
+        1U << static_cast<uint32_t>(
+            nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+
+    std::unique_ptr<nvinfer1::INetworkDefinition> network(
+        builder->createNetworkV2(explicitBatch));
+
+    if(!network)
+    {
+        throw std::runtime_error("Failed to create TensorRT network");
+    }
+
+    std::unique_ptr<nvonnxparser::IParser> parser(
+        nvonnxparser::createParser(*network, logger_));
+
+    if(!parser)
+    {
+        throw std::runtime_error("Failed to create ONNX parser");
+    }
+
+    std::cout << "Loading ONNX model: " << onnxPath << std::endl;
+
+    if(!parser->parseFromFile(
+           onnxPath.c_str(),
+           static_cast<int>(nvinfer1::ILogger::Severity::kWARNING)))
+    {
+        for(int i = 0; i < parser->getNbErrors(); ++i)
+        {
+            const nvonnxparser::IParserError* error = parser->getError(i);
+
+            if(error)
+            {
+                std::cerr << "[ONNX Parser] " << error->desc() << std::endl;
+            }
+        }
+
+        throw std::runtime_error("Failed to parse ONNX model: " + onnxPath);
+    }
+
+    std::unique_ptr<nvinfer1::IBuilderConfig> config(
+        builder->createBuilderConfig());
+
+    if(!config)
+    {
+        throw std::runtime_error("Failed to create TensorRT builder config");
+    }
+
+    config->setMemoryPoolLimit(
+        nvinfer1::MemoryPoolType::kWORKSPACE,
+        1ULL << 30);
+
+    if(builder->platformHasFastFp16())
+    {
+        config->setFlag(nvinfer1::BuilderFlag::kFP16);
+    }
+
+    std::cout << "Building TensorRT engine from ONNX..." << std::endl;
+
+    std::unique_ptr<nvinfer1::IHostMemory> serializedEngine(
+        builder->buildSerializedNetwork(*network, *config));
+
+    if(!serializedEngine)
+    {
+        throw std::runtime_error("Failed to build TensorRT engine from ONNX");
+    }
+
+    engine_.reset(
+        runtime_->deserializeCudaEngine(
+            serializedEngine->data(),
+            serializedEngine->size()));
+
+    if(!engine_)
+    {
+        throw std::runtime_error("Failed to deserialize ONNX-built engine");
     }
 
     context_.reset(engine_->createExecutionContext());

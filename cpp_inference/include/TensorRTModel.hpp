@@ -20,7 +20,7 @@ class TensorRTModel
 {
 public:
     
-    explicit TensorRTModel(const std::string& enginePath);
+    explicit TensorRTModel(const std::string& modelPath);
     
     ~TensorRTModel();
 
@@ -36,7 +36,9 @@ public:
     int inputW() const;
 
 private:
+    void loadModel(const std::string& modelPath);
     void loadEngine(const std::string& enginePath);
+    void loadOnnx(const std::string& onnxPath);
     void allocateBuffers();
     void readTensorShapes();
 

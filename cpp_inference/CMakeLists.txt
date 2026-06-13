@@ -58,7 +58,15 @@ find_library(TENSORRT_LIBRARY
         /usr
         /usr/local/TensorRT)
 
-if(NOT TENSORRT_INCLUDE_DIR OR NOT TENSORRT_LIBRARY)
+find_library(TENSORRT_ONNXPARSER_LIBRARY
+    nvonnxparser
+    HINTS ${TensorRT_ROOT} $ENV{TensorRT_ROOT}
+    PATH_SUFFIXES lib lib64 lib/x86_64-linux-gnu
+    PATHS
+        /usr
+        /usr/local/TensorRT)
+
+if(NOT TENSORRT_INCLUDE_DIR OR NOT TENSORRT_LIBRARY OR NOT TENSORRT_ONNXPARSER_LIBRARY)
     message(FATAL_ERROR
         "TensorRT not found.\n"
         "Install TensorRT 10.x or configure with:\n"
@@ -94,6 +102,7 @@ else()
     message(STATUS "TensorRT Version : ${TENSORRT_MAJOR}.${TENSORRT_MINOR}.${TENSORRT_PATCH}")
     message(STATUS "TensorRT Include : ${TENSORRT_INCLUDE_DIR}")
     message(STATUS "TensorRT Library : ${TENSORRT_LIBRARY}")
+    message(STATUS "TensorRT ONNX Parser : ${TENSORRT_ONNXPARSER_LIBRARY}")
 endif()
 
 
@@ -119,7 +128,8 @@ target_include_directories(multitask_infer PRIVATE
 target_link_libraries(multitask_infer PRIVATE
     ${OpenCV_LIBS}
     ${CUDA_CUDART_LIBRARY}
-    ${TENSORRT_LIBRARY})
+    ${TENSORRT_LIBRARY}
+    ${TENSORRT_ONNXPARSER_LIBRARY})
 
 
 target_compile_options(multitask_infer PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>)
