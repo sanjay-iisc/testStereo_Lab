@@ -3,8 +3,18 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-data/
-outputs/
+data/cityscapes/disparity/test/*
+data/cityscapes/disparity/train/*
+data/cityscapes/disparity/val/*
+
+data/cityscapes/gtFine/test/*
+data/cityscapes/gtFine/train/*
+data/cityscapes/gtFine/val/*
+
+data/cityscapes/leftImg8bit/train/*
+data/cityscapes/leftImg8bit/test/*
+data/cityscapes/leftImg8bit/val/*
+
 *.pth
 *.pt
 *.ckpt
@@ -13,3 +23,4 @@ outputs/
 .vscode/
 cpp_inference/build/*
 src/vision.egg-info/*
+
