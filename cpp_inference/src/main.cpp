@@ -237,35 +237,30 @@ int main(int argc, char** argv)
         double previousGuiMs = 0.0;
         double previousLoopMs = 0.0;
         int frameIndex = 0;
-        int frameStep = cameraInput ? 1 : 3;
+        int frameStep = cameraInput ? 1 : 30;
 
         
 
         while(true)
         {
-            const auto loopStart =
-                std::chrono::high_resolution_clock::now();
+            const auto loopStart = std::chrono::high_resolution_clock::now();
 
-            const auto captureStart =
-                std::chrono::high_resolution_clock::now();
+            const auto captureStart = std::chrono::high_resolution_clock::now();
 
             if(!cap.read(frame))
             {
                 break;
             }
 
-            const auto captureEnd =
-                std::chrono::high_resolution_clock::now();
+            const auto captureEnd = std::chrono::high_resolution_clock::now();
 
             ++frameIndex;
 
-            const auto processStart =
-                std::chrono::high_resolution_clock::now();
+            const auto processStart = std::chrono::high_resolution_clock::now();
 
             cv::Mat display = runOneFrame(model, frame);
 
-            const auto processEnd =
-                std::chrono::high_resolution_clock::now();
+            const auto processEnd = std::chrono::high_resolution_clock::now();
 
             drawDisplayLoopStats(
                 display,
@@ -302,8 +297,7 @@ int main(int argc, char** argv)
             //     writer.write(display);
             // }
 
-            const auto guiStart =
-                std::chrono::high_resolution_clock::now();
+            const auto guiStart = std::chrono::high_resolution_clock::now();
 
             cv::imshow("RGB | Sky Overlay | Depth", display);
 
