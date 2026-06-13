@@ -1,0 +1,15 @@
+vision_test
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+data/
+outputs/
+*.pth
+*.pt
+*.ckpt
+
+.env
+.vscode/
+cpp_inference/build/*
+src/vision.egg-info/*
